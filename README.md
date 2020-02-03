@@ -1,3 +1,3 @@
-# Channels-2.x
-# Channels-2.x
-# RET
+# RET in Channels-2.x
+
+The auction applications are not functioning yet.
