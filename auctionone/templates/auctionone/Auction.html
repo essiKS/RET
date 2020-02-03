@@ -1,0 +1,59 @@
+{% extends "auctionone/Page.html" %}
+{% load otree %}
+
+{% block title %}
+    Auction {{ player.round_number }}
+{% endblock %}
+
+{% block content %}
+    <div class="general_info">
+        {% include 'auctionone/components/general_info_block.html' %}
+    </div>
+    {% if player.role == 'employer' %}
+        <p>
+            To offer a salary to the potential employees, click one of the offer buttons below.
+        </p>
+    {% else %}
+        <p>
+            To accept an offer, click one of the offers available and then click the Accept-button. <br>
+            The "Accept" button will appear after an offer has been clicked.
+        </p>
+    {% endif %}
+
+    <div class="offer_container">
+        {% include 'auctionone/components/open_contracts_block.html' %}
+    </div>
+
+    {% if player.role == 'employer' %}
+        <div><p>Your wage offer is: <b><span id="standing_offer"></span></b></p></div>
+        <p>You can offer: </p>
+        <div style="margin: 0 10px 0 10px;">
+            {% for offer in Constants.offer_range %}
+                <button type="button" data-offer={{ offer }} class="offer">{{ offer }}</button>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div>
+            <p>To accept an offer,click one of the offers available and then click "Accept". <br>
+                <input id="temp_output" type="number" value="" readonly class="offer" style="background-color:white">
+                <input id="subbutton" type="hidden" value="Accept" class="offer">
+
+        </div>
+    {% endif %}
+
+{% endblock %}
+
+
+{% block scripts %}
+    {% include 'auctionone/channels/auction_channel.html' %}
+{% endblock %}
+
+{% block styles %}
+    <style>
+        .open_contract {
+            cursor: pointer !important;
+            font-size: medium;
+        }
+    </style>
+{% endblock %}

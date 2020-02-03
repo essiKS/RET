@@ -1,0 +1,23 @@
+{% extends "auctionone/Page.html" %}
+{% load otree %}
+{% block title %}
+    Effort task instructions
+{% endblock %}
+
+{% block content %}
+    <p> The task is to <b>find the largest number in the box on the right and largest number in the box on the left</b>
+        and then to <b>sum them together</b>.
+        Write the answer to the box underneath, and then submit it.
+    </p>
+
+    <p>
+        You have <b>{{ Constants.task_time }} seconds</b> to work on submitting the tasks.
+    </p>
+
+    <p>
+        When you are ready, click next to start the working phase.
+    </p>
+
+    {% next_button %}
+
+{% endblock %}

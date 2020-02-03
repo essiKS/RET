@@ -1,0 +1,47 @@
+{% load otree %}
+
+<script>
+//    $(function () {
+        var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+        // Removed the slash
+        var ws_path = ws_scheme + '://' + window.location.host + "/RETtasktracker/{{ participant.code }}/";
+        var socket = new ReconnectingWebSocket(ws_path);
+        // Handle messages sent by the server.
+         var $answer = $('input#answer');
+        var $btn_answer = $("button.answer");
+
+        socket.onmessage = function (event) {
+            var obj = jQuery.parseJSON(event.data);
+            $('div.task-container').html(obj.task_body);
+            $('span#num_tasks_total').html(obj.num_tasks_total);
+            $('span#num_tasks_correct').html(obj.num_tasks_correct);
+        };
+
+        socket.onopen = function () {
+            console.log('WebSocket connected');
+        };
+        socket.onclose = function () {
+            console.log('WebSocket disconnected');
+        };
+
+        $btn_answer.on("click", function () {
+            var msg = {
+                'answer': $answer.val(),
+            };
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(msg));
+            }
+            ;
+            $answer.val('').focus();
+        });
+        $answer.keydown(function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                $btn_answer.click();
+                return false;
+            }
+        });
+
+//    });
+</script>
+

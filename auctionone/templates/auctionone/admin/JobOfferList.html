@@ -1,0 +1,63 @@
+{% extends "auctionone/admin/BaseDAAdmin.html" %}
+{% load static %}
+{% block title %}
+    Job offers
+{% endblock %}
+
+{% block content %}
+
+    {% if job_offers %}
+        <table class="table-hover table-striped table">
+            <thead>
+            <th>Session</th>
+            <th>Employer code</th>
+            <th>Round number</th>
+            <th>Group id</th>
+            <th>Amount</th>
+            <th>Offer accepted</th>
+            <th>Worker code</th>
+            <th>Offer made</th>
+            <th>Offer accepted</th>
+            </thead>
+            {% for j in job_offers %}
+                <tr>
+                    <td>
+                        {{ j.employer.session.code }}
+                    </td>
+                    <td>
+                        {{ j.employer.participant.code }}
+                    </td>
+
+                    <td>
+                        {{ j.employer.round_number }}
+                    </td>
+                    <td>
+                        {{ j.employer.group.id_in_subsession }}
+                    </td>
+                    <td>
+                        {{ j.amount }}
+                    </td>
+                    <td>
+                        {% if j.worker %}Yes {% else %}No{% endif %}
+                    </td>
+                    <td>
+                        {{ j.worker.participant.code|default_if_none:"" }}
+                    </td>
+                    <td>
+                        {{ j.created_at }}
+                    </td>
+                    <td>
+                        {% if j.worker %}  {{ j.updated_at }} {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        {% include 'auctionone/admin/includes/pagination_footer.html' %}
+    {% else %}
+        No data on job offers have been found.
+    {% endif %}
+{% endblock %}
+
+
+

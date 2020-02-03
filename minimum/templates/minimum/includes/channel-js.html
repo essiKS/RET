@@ -1,0 +1,54 @@
+<script>
+    {# Removed the function around the script #}
+
+        console.log("well, at least js started");
+        {# The following lines define the path to the oTree server  #}
+        var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+        {# The ws_path corresponds to url_pattern that is defined in our consumers.py file #}
+        {# We need the player.id to find the corresponding player in the database #}
+        var ws_path = ws_scheme + '://' + window.location.host + "/minimum/{{ player.id }}/";
+        console.log("ws_path=" + ws_path);
+
+        var socket = new ReconnectingWebSocket(ws_path);
+        {# Define variables to get information from the inputs and to manage button clicks #}
+        var $answer = $('input#answer');
+        var $btn_answer = $("button.answer");
+        {#  The following event happens when we receive data from the server  #}
+
+        socket.onopen = function () {
+            console.log('WebSocket connected');
+        };
+        socket.onclose = function () {
+            console.log('WebSocket disconnected');
+        };
+
+        socket.onmessage = function (event) {
+            {#  We convert the data into a javascript object:  #}
+            var obj = jQuery.parseJSON(event.data);
+            {# We show a new task  #}
+            $('h1.question').html(obj.task_body);
+            {# ...and we update counters of correct and total answers #}
+            $('span#num_tasks_total').html(obj.num_tasks_total);
+            $('span#num_tasks_correct').html(obj.num_tasks_correct);
+        };
+        {# The following is triggered when a user clicks on the answer button #}
+        $btn_answer.on("click", function () {
+            {#  We wrap the answer into a javascript object #}
+            var msg = {'answer': $answer.val()};
+            if (socket.readyState === WebSocket.OPEN) {
+                {# we convert it to json format and send it back to the server #}
+                socket.send(JSON.stringify(msg));
+            };
+            {# ... and the last: we clear out the input field so a user can insert a new answer for the next task #}
+            $("input#answer").val('');
+        });
+        {# The following code prevents the form from submitting (and exiting the page) when enter button is hit #}
+        $answer.keydown(function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                $btn_answer.click();
+                return false;
+            }
+        });
+        console.log("Well, got this far")
+</script>
