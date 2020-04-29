@@ -6,9 +6,9 @@ from os import environ
 # e.g. self.session.config['participation_fee']
 
 EXTENSION_APPS = [
-    'minimum',
-#    'auctionone',
-    'realefforttask',
+     'minimum',
+    'auctionone',
+    # 'realefforttask',
 #    'double_auction'
 ]
 
@@ -35,7 +35,7 @@ SESSION_CONFIGS = [
         'num_demo_participants': 1,
         'app_sequence': ['realefforttask'],
         'task': 'TwoMatrices',
-        'task_params': {'difficulty': 5},
+        'task_params': {'difficulty': 10},
     },
     {
         'name': 'realefforttask2',
@@ -43,7 +43,7 @@ SESSION_CONFIGS = [
         'num_demo_participants': 1,
         'app_sequence': ['realefforttask'],
         'task': 'SumNumbers',
-        'task_params': {'num_digits': 4,
+        'task_params': {'num_digits': 2,
                         'digits_range': [50, 99]},
     },
 
@@ -65,14 +65,14 @@ SESSION_CONFIGS = [
         'num_demo_participants': 1,
         'app_sequence': ['realefforttask'],
         'task': 'Decoding',
-        'task_params': {'dict_length': 10, 'task_len': 5},
+        'task_params': {'dict_length': 10, 'task_len': 7},
     },
-#    {
-#        'name': 'auctionone',
-#        'display_name': 'One sided auction and RET',
-#        'num_demo_participants': 3,
-#        'app_sequence': ['auctionone'],
-#    },
+    {
+        'name': 'auctionone',
+        'display_name': 'One sided auction and RET',
+        'num_demo_participants': 3,
+        'app_sequence': ['auctionone'],
+    },
 #    {
 #        'name': 'double_auction',
 #        'display_name': 'Double auction',

@@ -98,5 +98,5 @@ class Task(djmodels.Model):
                    body=proto_task.body,
                    html_body=proto_task.html_body,
                    correct_answer=proto_task.correct_answer,
-                   task_name = proto_task.name)
+                   task_name=proto_task.name)
         return task

@@ -10,7 +10,10 @@ from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from .ret_functions import TwoMatrices
 from django.db.models import F
-
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+channel_layer = get_channel_layer()
+from django.utils import timezone
 author = ''
 
 doc = """
@@ -153,8 +156,8 @@ class JobOffer(djmodels.Model):
     worker = djmodels.ForeignKey(Player, null=True, related_name='offer_accepted', on_delete=models.CASCADE)
     group = djmodels.ForeignKey(Group, related_name='offers', on_delete=models.CASCADE)
     amount = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # created_at = models.DateTimeField(auto_now_add=True)
+    # updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
     def post_save(cls, sender, instance, created, *args, **kwargs):
@@ -165,22 +168,36 @@ class JobOffer(djmodels.Model):
             for p in contract_parties:
                 p.matched = True
                 p.save()
-                p_group = ChannelGroup(p.get_personal_channel_name())
-                p_group.send(
-                    {'text': json.dumps({
-                        'day_over': True,
-                    })}
+                # what needs to happen is that the individual get's the message "day_over" is True
+                personal_channel = p.get_personal_channel_name()
+                reply = {
+                    'day_over': True,
+                }
+                # what is self here, what is self there?
+                # question is - do I use a different layer, change group_send to individual_send, and refine that
+                # group layer, or something else? Who does "send" send the message to?
+                # async_to_sync(channel_layer.send)("channel_name", {...})
+                async_to_sync(channel_layer.group_send)(
+                    personal_channel,  # this channel name needs to refer to the individual
+                    {
+                        'type': "personal.message",
+                        'reply': reply
+                    }
                 )
-#CHANNEL LAYER NEEDS TO HAPPEN HERE
 
-        group_channel = ChannelGroup(group.get_channel_group_name())
+        group_name = group.get_channel_group_name()
         group_message = {}
         if not group.is_active():
             group_message['day_over'] = True
         group_message['open_offers'] = group.get_active_offers_html()
         group_message['general_info'] = group.get_general_info_html()
-        group_channel.send({'text': json.dumps(group_message)})
-
+        async_to_sync(channel_layer.group_send)(
+            str(group_name),  # this channel name needs to refer to the group.
+            {
+                "type": "auction.message",
+                "grp_msg": group_message
+            }
+        )
 
 class Task(djmodels.Model):
     class Meta:

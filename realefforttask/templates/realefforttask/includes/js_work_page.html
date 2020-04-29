@@ -12,6 +12,7 @@
 
         socket.onmessage = function (event) {
             var obj = jQuery.parseJSON(event.data);
+            console.log("onmessage" + obj);
             $('div.task-container').html(obj.task_body);
             $('span#num_tasks_total').html(obj.num_tasks_total);
             $('span#num_tasks_correct').html(obj.num_tasks_correct);

@@ -1,9 +1,10 @@
 {% load otree %}
 
 <script>
-    $(function () {
+//    $(function () {
         var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
-        var ws_path = ws_scheme + '://' + window.location.host + "/auction_one_tasktracker/{{ participant.code }}";
+        // Removed the slash
+        var ws_path = ws_scheme + '://' + window.location.host + "/auction_one_tasktracker/{{ participant.code }}/";
         var socket = new ReconnectingWebSocket(ws_path);
         // Handle messages sent by the server.
         var $answer = $('input#answer');
@@ -15,6 +16,13 @@
             $('span#num_tasks_total').html(obj.num_tasks_total);
             $('span#num_tasks_correct').html(obj.num_tasks_correct);
             $('span#feedback').html(obj.feedback);
+        };
+
+        socket.onopen = function () {
+            console.log('WebSocket connected');
+        };
+        socket.onclose = function () {
+            console.log('WebSocket disconnected');
         };
 
         $btn_answer.on("click", function () {
@@ -36,6 +44,6 @@
             }
         });
 
-    });
+//    });
 </script>
 

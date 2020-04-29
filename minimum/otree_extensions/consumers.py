@@ -40,7 +40,7 @@ class Minimum(_OTreeJsonWebsocketConsumer):
 
     # ADDED
     def minimum_message(self, event):
-        print("minimum message")
+        print("minimum message", event)
         # Send message to WebSocket
         self.send(text_data=json.dumps(event))
 
@@ -55,7 +55,7 @@ class Minimum(_OTreeJsonWebsocketConsumer):
         )
 
     def pre_disconnect(self, player_id):
-
+        print("pre_disconnect activated")
         # remove the player from their channel_layer
         self.room_group_name = self.group_name(player_id)
         async_to_sync(self.channel_layer.group_discard)(
@@ -68,7 +68,7 @@ class Minimum(_OTreeJsonWebsocketConsumer):
     # changed to post_receive_json
 
     def post_receive_json(self, text, player_id):
-
+        print("post_receive_json activated")
         # using the keyword we get the player
         p = Player.objects.get(id=player_id)
         # we receive the answer

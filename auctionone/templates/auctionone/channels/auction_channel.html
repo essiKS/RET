@@ -1,25 +1,38 @@
 <script>
-    $(function () {
+//    $(function () {
         var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
-        var ws_path = ws_scheme + '://' + window.location.host + "/auction_channel/{{ group.id_in_subsession }},{{ participant.code }}";
+        var ws_path = ws_scheme + '://' + window.location.host + "/auction_channel/{{ group.id_in_subsession }},{{ participant.code }}/";
+        // no route for the above path found... there must be something wrong here. remove the function
         var socket = new ReconnectingWebSocket(ws_path);
+
+        ////
+        socket.onopen = function () {
+            console.log('WebSocket connected');
+        };
+        socket.onclose = function () {
+            console.log('WebSocket disconnected');
+        };
+
         send_message = function (msg) {
             if (socket.readyState === WebSocket.OPEN) {
+                console.log("msg " + msg);
                 socket.send(JSON.stringify(msg));
             }
         };
-
         socket.onmessage = function (event) {
+            /// the problem is, no messages are received (or sent to the right place)
             var obj = jQuery.parseJSON(event.data);
+            console.log("obj" + obj);
             var $offer_container = $('div.offer_container');
             var $general_info_container = $('div.general_info');
             if (obj.day_over) {
                 $('form').submit();
                 return;
             }
-
             $offer_container.html(obj.open_offers);
             $general_info_container.html(obj.general_info);
+            $('div.offer_container').html(obj.open_offers);
+            $('div.general_info_container').html(obj.general_info);
         };
         {% if player.role == "employer" %}
             $("button.offer").on("click", function () {
@@ -57,5 +70,5 @@
                 send_message(msg);
             };
         {% endif %}
-    })
+//    })
 </script>

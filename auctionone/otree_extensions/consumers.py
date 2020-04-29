@@ -2,7 +2,6 @@
 from consumers import _OTreeJsonWebsocketConsumer
 from auctionone.models import Player, Group, JobOffer
 from otree.models import Participant
-from realefforttask.models import Player
 from otree.models import Participant
 from otree.models_concrete import ParticipantToPlayerLookup
 import logging
@@ -15,32 +14,24 @@ logger = logging.getLogger(__name__)
 ALWAYS_UNRESTRICTED = 'ALWAYS_UNRESTRICTED'
 UNRESTRICTED_IN_DEMO_MODE = 'UNRESTRICTED_IN_DEMO_MODE'
 
-print("consumers started")
-
 
 class GeneralTracker(_OTreeJsonWebsocketConsumer):
     unrestricted_when = 'ALWAYS_UNRESTRICTED'
 
-    #CHANGED
+    # CHANGED
 
     # ADDED
-    def group_name(self, participant_code):
-        print("group name ", participant_code)
+    def group_name(self, group_id, participant_code):
         return "RETplayer-" + str(participant_code)
 
     # ADDED
     def RET_message(self, event):
-        print("RET message")
         # Send message to WebSocket
         self.send(text_data=json.dumps(event))
 
-    def Auction_message(self,event):
-        print("Auction message")
-
     # ADDED
-    def post_connect(self, participant_code):
+    def post_connect(self, participant_code, group_id):
         # add them to the channel_layer
-        print("post connect")
         self.room_group_name = self.group_name(participant_code)
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name,
@@ -50,18 +41,14 @@ class GeneralTracker(_OTreeJsonWebsocketConsumer):
     def get_player(self):
         return Player.objects.get(id=self.player_pk)
 
-################################################
-# TRANSFORMATION LEFT HERE
-################################################
-
 
 class TaskTracker(GeneralTracker):
+
     unrestricted_when = 'ALWAYS_UNRESTRICTED'
-    #url_pattern = r'^/auction_one_tasktracker/(?P<participant_code>.+)$'
+    # url_pattern = r'^/auction_one_tasktracker/(?P<participant_code>.+)$'
 
     def clean_kwargs(self, params):
         participant_code = params
-        print("all kwargs", participant_code)
         participant = Participant.objects.get(code__exact=params)
         cur_page_index = participant._index_in_pages
         lookup = ParticipantToPlayerLookup.objects.get(participant=participant, page_index=cur_page_index)
@@ -69,6 +56,27 @@ class TaskTracker(GeneralTracker):
         return {
             'participant_code': participant_code,
         }
+
+    # ADDED
+    def group_name(self, participant_code):
+        return "RETplayer-" + str(participant_code)
+
+    # ADDED
+    def RET_message(self, event):
+        # Send message to WebSocket
+        self.send(text_data=json.dumps(event))
+
+    # ADDED
+    def post_connect(self, participant_code):
+        # add them to the channel_layer
+        self.room_group_name = self.group_name(participant_code)
+        async_to_sync(self.channel_layer.group_add)(
+            self.room_group_name,
+            self.channel_name
+        )
+
+    def get_player(self):
+        return Player.objects.get(id=self.player_pk)
 
     # CHANGE TO post receive json
     def post_receive_json(self, text, participant_code):
@@ -92,7 +100,6 @@ class TaskTracker(GeneralTracker):
                 'num_tasks_total': player.num_tasks_total,
                 'feedback': feedback,
             }
-
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 reply
@@ -100,13 +107,12 @@ class TaskTracker(GeneralTracker):
 
 
 class AuctionTracker(GeneralTracker):
+
     unrestricted_when = 'ALWAYS_UNRESTRICTED'
-    #url_pattern = r'^/auction_channel/(?P<participant_code>.+)$'
 
     def clean_kwargs(self, params):
         group_id, participant_code = params.split(',')
-        print("all kwargs", group_id, participant_code)
-        participant = Participant.objects.get(code__exact=params)
+        participant = Participant.objects.get(code__exact=participant_code)
         cur_page_index = participant._index_in_pages
         lookup = ParticipantToPlayerLookup.objects.get(participant=participant, page_index=cur_page_index)
         self.player_pk = lookup.player_pk
@@ -117,16 +123,31 @@ class AuctionTracker(GeneralTracker):
 
     def connection_groups(self, **kwargs):
         group_name = self.get_group().get_channel_group_name()
+        async_to_sync(self.channel_layer.group_add)(group_name, self.channel_name)
         personal_channel = self.get_player().get_personal_channel_name()
+        async_to_sync(self.channel_layer.group_add)(personal_channel, self.channel_name)
         return [group_name, personal_channel]
 
     def get_group(self):
         player = self.get_player()
         return Group.objects.get(pk=player.group.pk)
 
+    def post_connect(self, group_id, participant_code):
+        group_name = self.get_group().get_channel_group_name()
+        async_to_sync(self.channel_layer.group_add)(
+            group_name,  # room_group_name
+            self.channel_name
+        )
+
+    def auction_message(self, event):
+        # Handles the "auction.message" type when it's sent.
+        self.send(text_data=json.dumps(event['grp_msg']))
+
+    def personal_message(self, event):
+        self.send(text_data=json.dumps(event['reply']))
+
     # CHANGE TO post receive json
-    def post_receive_json(self, text, participant_code):
-        self.clean_kwargs()
+    def post_receive_json(self, text, group_id, participant_code):
         player = self.get_player()
         if text.get('offer_made') and player.role() == 'employer':
             wage_offer = text['wage_offer']

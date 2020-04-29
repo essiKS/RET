@@ -16,6 +16,7 @@ from channels.generic.websocket import (
 from django.core.signing import Signer, BadSignature
 import otree.session
 from otree.channels.utils import get_chat_group
+from otree.common import get_models_module
 from otree.models import Participant, Session
 from otree.models_concrete import (
     CompletedGroupWaitPage,

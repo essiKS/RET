@@ -8,3 +8,5 @@ websocket_routes += [
     url(r'^auction_channel/(?P<params>[\w,]+)/$',
         AuctionTracker)
 ]
+# If troubleshooting, test with this:
+# print("websocket_routes="+str(websocket_routes))
