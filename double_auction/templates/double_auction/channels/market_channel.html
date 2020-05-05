@@ -3,11 +3,18 @@
     var l = function (x) {
         console.log(x);
     };
-    $(function () {
+    console.log("well, at least js started");
+     $(function () {
         var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
         var ws_path = ws_scheme + '://' + window.location.host + "/market_channel/{{ participant.code }}/{{ page_index }}";
         var socket = new ReconnectingWebSocket(ws_path);
 
+        socket.onopen = function () {
+            console.log('WebSocket connected');
+        };
+        socket.onclose = function () {
+            console.log('WebSocket disconnected');
+        };
 
         var $asks_container = $('tbody.asks_container');
         var $bids_container = $('tbody.bids_container');
@@ -45,7 +52,6 @@
 
             var has_last_statement = obj.hasOwnProperty('last_statement');
 
-
             if (has_last_statement) {
                 var last_statement = obj.last_statement;
                 $('#last_statement_price').html(last_statement.price);
@@ -54,7 +60,6 @@
                 $('#last_statement_price').html('');
                 $('#last_statement_quantity').html('');
             }
-
         };
         $form_container.on('click', 'button#submit_statement', function () {
             var $price_inp = $('input#price');
@@ -89,15 +94,11 @@
 
             var msg = {
                 'action': 'retract_statement',
-
             };
             if (socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify(msg));
             }
             ;
         });
-
-
-    })
-    ;
+     });
 </script>

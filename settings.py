@@ -6,10 +6,10 @@ from os import environ
 # e.g. self.session.config['participation_fee']
 
 EXTENSION_APPS = [
-     'minimum',
+    'minimum',
     'auctionone',
-    # 'realefforttask',
-#    'double_auction'
+    'realefforttask',
+    'double_auction'
 ]
 
 AWS_ACCESS_KEY_ID = environ.get('AWS_ACCESS_KEY_ID')
@@ -73,24 +73,24 @@ SESSION_CONFIGS = [
         'num_demo_participants': 3,
         'app_sequence': ['auctionone'],
     },
-#    {
-#        'name': 'double_auction',
-#        'display_name': 'Double auction',
-#        'num_demo_participants': 3,
-#        'app_sequence': ['double_auction'],
-#        'num_sellers': 1,
-#        'num_buyers': 2,
-#        'units_per_seller': 4,
-#        'units_per_buyer': 4,
-#        'time_per_round': 300,
-#        'multiple_unit_trading': False,
-#        'seller_cost_lb': 1,
-#        'seller_cost_ub': 10,
-#        'buyer_value_lb': 1,
-#        'buyer_value_ub': 10,
-#        'endowment_lb': 10,
-#        'endowment_ub': 50,
-#    },
+    {
+        'name': 'double_auction',
+        'display_name': 'Double auction',
+        'num_demo_participants': 3,
+        'app_sequence': ['double_auction'],
+        'num_sellers': 1,
+        'num_buyers': 2,
+        'units_per_seller': 4,
+        'units_per_buyer': 4,
+        'time_per_round': 3000,
+        'multiple_unit_trading': False,
+        'seller_cost_lb': 1,
+        'seller_cost_ub': 10,
+        'buyer_value_lb': 1,
+        'buyer_value_ub': 10,
+        'endowment_lb': 10,
+        'endowment_ub': 50,
+    },
 ]
 
 # ISO-639 code

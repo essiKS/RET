@@ -2,7 +2,6 @@
 from consumers import _OTreeJsonWebsocketConsumer
 from auctionone.models import Player, Group, JobOffer
 from otree.models import Participant
-from otree.models import Participant
 from otree.models_concrete import ParticipantToPlayerLookup
 import logging
 # ADDED
@@ -66,7 +65,7 @@ class TaskTracker(GeneralTracker):
         # Send message to WebSocket
         self.send(text_data=json.dumps(event))
 
-    # ADDED
+    # ADDED IS this doing anything but harm?
     def post_connect(self, participant_code):
         # add them to the channel_layer
         self.room_group_name = self.group_name(participant_code)
@@ -123,6 +122,7 @@ class AuctionTracker(GeneralTracker):
 
     def connection_groups(self, **kwargs):
         group_name = self.get_group().get_channel_group_name()
+        print(group_name)
         async_to_sync(self.channel_layer.group_add)(group_name, self.channel_name)
         personal_channel = self.get_player().get_personal_channel_name()
         async_to_sync(self.channel_layer.group_add)(personal_channel, self.channel_name)

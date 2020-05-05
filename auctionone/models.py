@@ -156,8 +156,8 @@ class JobOffer(djmodels.Model):
     worker = djmodels.ForeignKey(Player, null=True, related_name='offer_accepted', on_delete=models.CASCADE)
     group = djmodels.ForeignKey(Group, related_name='offers', on_delete=models.CASCADE)
     amount = models.IntegerField()
-    # created_at = models.DateTimeField(auto_now_add=True)
-    # updated_at = models.DateTimeField(auto_now=True)
+    created_at = djmodels.DateTimeField(auto_now_add=True, null=True)
+    updated_at = djmodels.DateTimeField(auto_now=True)
 
     @classmethod
     def post_save(cls, sender, instance, created, *args, **kwargs):

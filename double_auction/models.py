@@ -11,7 +11,11 @@ from django.db.models.signals import post_save, pre_save
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from django.core.exceptions import ObjectDoesNotExist
-from channels import Group as ChannelGroup
+
+# E: Replacing "from channels import Group as ChannelGroup" with the following 3 lines
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+channel_layer = get_channel_layer()
 
 from .exceptions import NotEnoughFunds, NotEnoughItemsToSell
 
@@ -120,19 +124,19 @@ class Group(BaseGroup):
             return bests.last()
 
     def presence_check(self):
-        msg = {'market_over': False}
+        group_msg = {'market_over': False}
         if self.no_buyers_left():
             self.active = False
             self.save()
-            msg = {'market_over': True,
+            group_msg = {'market_over': True,
                    'over_message': 'No buyers left'}
 
         if self.no_sellers_left():
             self.active = False
             self.save()
-            msg = {'market_over': True,
+            group_msg = {'market_over': True,
                    'over_message': 'No sellers left'}
-        return msg
+        return group_msg
 
 
 class Player(BasePlayer):
@@ -176,20 +180,20 @@ class Player(BasePlayer):
         return self.slots.filter(item__isnull=False)
 
     def presence_check(self):
-        msg = {'market_over': False}
+        reply = {'market_over': False}
 
         if not self.is_active():
             if self.role() == 'buyer':
                 if self.endowment <= 0:
-                    msg = {'market_over': True,
+                    reply = {'market_over': True,
                            'over_message': 'No funds left for trading'}
                 if not self.has_free_slots():
-                    msg = {'market_over': True,
+                    reply = {'market_over': True,
                            'over_message': 'No slots available for trading left'}
             else:
-                msg = {'market_over': True,
+                reply = {'market_over': True,
                        'over_message': 'No items available for trading left'}
-        return msg
+        return reply
 
     def get_repo_context(self):
         repository = self.get_slots().annotate(quantity=F('item__quantity'))
@@ -292,11 +296,13 @@ class Player(BasePlayer):
 
 
 class BaseRecord(djmodels.Model):
+
     quantity = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # E: the time functions don't work anymore + added on_delete
+    created_at = djmodels.DateTimeField(auto_now_add=True, null=True)
+    updated_at = djmodels.DateTimeField(auto_now=True)
     player = djmodels.ForeignKey(to=Player,
-                                 related_name="%(class)ss", )
+                                 related_name="%(class)ss", on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -381,29 +387,29 @@ class Bid(BaseStatement):
 
 class Slot(djmodels.Model):
     """A slot is a space with an associated cost or value (depending on a type of a player (buyer or seller). """
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    owner = djmodels.ForeignKey(to=Player, related_name="slots", )
+    created_at = djmodels.DateTimeField(auto_now_add=True, null=True)
+    updated_at = djmodels.DateTimeField(auto_now=True)
+    owner = djmodels.ForeignKey(to=Player, related_name="slots", on_delete=models.CASCADE)
     cost = models.FloatField(doc='this is defined for sellers only', null=True)
     value = models.FloatField(doc='for buyers only', null=True)
 
 
 class Item(djmodels.Model):
     """This is a repository of items people have for trading in the trading sessions."""
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    slot = djmodels.OneToOneField(to=Slot, related_name='item')
+    created_at = djmodels.DateTimeField(auto_now_add=True, null=True)
+    updated_at = djmodels.DateTimeField(auto_now=True)
+    slot = djmodels.OneToOneField(to=Slot, related_name='item', on_delete=models.CASCADE)
     quantity = models.IntegerField()
 
 
 class Contract(djmodels.Model):
     """This model contains information about all contracts done during the trading session (aka round)."""
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = djmodels.DateTimeField(auto_now_add=True, null=True)
+    updated_at = djmodels.DateTimeField(auto_now=True)
     # the o2o field to item should be reconsidered if we make quantity flexible
-    item = djmodels.OneToOneField(to=Item)
-    bid = djmodels.OneToOneField(to=Bid)
-    ask = djmodels.OneToOneField(to=Ask)
+    item = djmodels.OneToOneField(to=Item, on_delete=models.CASCADE)
+    bid = djmodels.OneToOneField(to=Bid, on_delete=models.CASCADE)
+    ask = djmodels.OneToOneField(to=Ask, on_delete=models.CASCADE)
     price = djmodels.DecimalField(max_digits=Constants.price_max_numbers, decimal_places=Constants.price_digits)
     cost = models.CurrencyField()
     value = models.CurrencyField()
@@ -439,24 +445,61 @@ class Contract(djmodels.Model):
             p.set_payoff()
             p.active = p.is_active()
             p.save()
-            p_group = ChannelGroup(p.get_personal_channel_name())
-            p_group.send(
-                {'text': json.dumps({
+            # E: replacing the following communications:
+            #p_group = ChannelGroup(p.get_personal_channel_name())
+            #p_group.send(
+            #    {'text': json.dumps({
+            #        'repo': p.get_repo_html(),
+            #        'contracts': p.get_contracts_html(),
+            #        'form': p.get_form_html(),
+            #        'profit': p.profit_block_html(),
+            #        'presence': p.presence_check(),
+            #    })}
+            #)
+            # with the following
+            p_group = p.get_personal_channel_name()
+            reply = {
                     'repo': p.get_repo_html(),
                     'contracts': p.get_contracts_html(),
                     'form': p.get_form_html(),
                     'profit': p.profit_block_html(),
                     'presence': p.presence_check(),
-                })}
+            }
+            async_to_sync(channel_layer.group_send)(p_group,  # this channel name needs to refer to the individual
+                {
+                    'type': "personal.message",
+                    'reply': reply
+                }
             )
         group = buyer.group
-        group_channel = ChannelGroup(group.get_channel_group_name())
-        group_channel.send({'text': json.dumps({'presence': group.presence_check()})})
+        # E: replacing the following line of code:
+        #group_channel = ChannelGroup(group.get_channel_group_name())
+        #group_channel.send({'text': json.dumps({'presence': group.presence_check()})})
+        #for p in group.get_players():
+        #    group_channel = ChannelGroup(p.get_personal_channel_name())
+        #    group_channel.send({'text': json.dumps({'asks': p.get_asks_html(),
+        #                                            'bids': p.get_bids_html()})})
+        # with:
+        group_channel = group.get_channel_group_name()
+        group_msg = {
+            'presence': group.presence_check()
+        }
+        async_to_sync(channel_layer.group_send)(group_channel,
+                                                {
+                                                    'type': "auction.message",
+                                                    'group_msg': group_msg
+                                                })
         for p in group.get_players():
-            group_channel = ChannelGroup(p.get_personal_channel_name())
-            group_channel.send({'text': json.dumps({'asks': p.get_asks_html(),
-                                                    'bids': p.get_bids_html()})})
-
+            p_channel = p.get_personal_channel_name()
+            reply = {
+                'asks': p.get_asks_html(),
+                'bids': p.get_bids_html()
+            }
+            async_to_sync(channel_layer.group_send)(p_channel,
+                                                    {
+                                                        'type': "personal.message",
+                                                        'reply': reply
+                                                    })
         return contract
 
 
