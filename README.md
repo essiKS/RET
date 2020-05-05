@@ -1,3 +1,3 @@
 # RET in Channels-2.x
 
-The auction applications are not functioning yet.
+The double auction application is not functioning yet.
