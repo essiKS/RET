@@ -1,3 +1,3 @@
 # RET in Channels-2.x
 
-The double auction application is not functioning yet.
+Double auction channels are working but the app is not yet at 100 %.
