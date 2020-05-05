@@ -469,8 +469,8 @@ class Contract(djmodels.Model):
                 {
                     'type': "personal.message",
                     'reply': reply
-                }
-            )
+                })
+
         group = buyer.group
         # E: replacing the following line of code:
         #group_channel = ChannelGroup(group.get_channel_group_name())

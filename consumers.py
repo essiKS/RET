@@ -1,5 +1,5 @@
-# 3.2. copied the version
-
+# 3.2.2020 copied the version from the packages
+# Thus this was otree.channels.consumers.py a while ago.
 import json
 import logging
 import django.db
@@ -38,8 +38,6 @@ from otree.views.admin import CreateSessionForm
 from otree.session import SESSION_CONFIGS_DICT
 from channels.db import database_sync_to_async
 
-print("the parent consumers started")
-
 # From the oTree cite: "If you are building your app for long-term stability, beware of importing anything from
 # otree.channels into your code. Like anything outside of otree.api, it may be removed abruptly."
 # Hence copying it here.
@@ -61,7 +59,6 @@ class _OTreeJsonWebsocketConsumer(JsonWebsocketConsumer):
     #ADDED FROM THE OTHER CHRIS
 
     def group_send_channel(self, type: str, groups=None, **event):
-        print('in group_send_channel')
         for group in (groups or self.groups):
             channel_utils.sync_group_send(group, {'type': type, **event})
 
@@ -94,7 +91,6 @@ class _OTreeJsonWebsocketConsumer(JsonWebsocketConsumer):
     # so we need to make our own
     # https://github.com/django/channels/issues/1241
     def connect(self):
-        print("connection started")
         AUTH_LEVEL = settings.AUTH_LEVEL
 
         auth_required = (
