@@ -168,15 +168,11 @@ class JobOffer(djmodels.Model):
             for p in contract_parties:
                 p.matched = True
                 p.save()
-                # what needs to happen is that the individual get's the message "day_over" is True
+                # sending the personal.message: the individual get's the message "day_over" is True
                 personal_channel = p.get_personal_channel_name()
                 reply = {
                     'day_over': True,
                 }
-                # what is self here, what is self there?
-                # question is - do I use a different layer, change group_send to individual_send, and refine that
-                # group layer, or something else? Who does "send" send the message to?
-                # async_to_sync(channel_layer.send)("channel_name", {...})
                 async_to_sync(channel_layer.group_send)(
                     personal_channel,  # this channel name needs to refer to the individual
                     {
@@ -184,7 +180,7 @@ class JobOffer(djmodels.Model):
                         'reply': reply
                     }
                 )
-
+        # group message: activity, offers, general info
         group_name = group.get_channel_group_name()
         group_message = {}
         if not group.is_active():
@@ -198,6 +194,7 @@ class JobOffer(djmodels.Model):
                 "grp_msg": group_message
             }
         )
+
 
 class Task(djmodels.Model):
     class Meta:

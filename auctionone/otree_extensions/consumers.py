@@ -17,25 +17,8 @@ UNRESTRICTED_IN_DEMO_MODE = 'UNRESTRICTED_IN_DEMO_MODE'
 class GeneralTracker(_OTreeJsonWebsocketConsumer):
     unrestricted_when = 'ALWAYS_UNRESTRICTED'
 
-    # CHANGED
-
-    # ADDED
     def group_name(self, group_id, participant_code):
         return "RETplayer-" + str(participant_code)
-
-    # ADDED
-    def RET_message(self, event):
-        # Send message to WebSocket
-        self.send(text_data=json.dumps(event))
-
-    # ADDED
-    def post_connect(self, participant_code, group_id):
-        # add them to the channel_layer
-        self.room_group_name = self.group_name(participant_code)
-        async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name,
-            self.channel_name
-        )
 
     def get_player(self):
         return Player.objects.get(id=self.player_pk)
@@ -78,7 +61,7 @@ class TaskTracker(GeneralTracker):
         return Player.objects.get(id=self.player_pk)
 
     # CHANGE TO post receive json
-    def post_receive_json(self, text, participant_code):
+    def post_receive_json(self, text, **kwargs):
         player = self.get_player()
         answer = text.get('answer')
         if answer:
@@ -120,19 +103,20 @@ class AuctionTracker(GeneralTracker):
             'participant_code': participant_code,
         }
 
+    def get_group(self):
+        player = self.get_player()
+        return Group.objects.get(pk=player.group.pk)
+
     def connection_groups(self, **kwargs):
+        #Needs to be defined - but there is probably some over lap with post_connect?
         group_name = self.get_group().get_channel_group_name()
-        print(group_name)
         async_to_sync(self.channel_layer.group_add)(group_name, self.channel_name)
         personal_channel = self.get_player().get_personal_channel_name()
         async_to_sync(self.channel_layer.group_add)(personal_channel, self.channel_name)
         return [group_name, personal_channel]
 
-    def get_group(self):
-        player = self.get_player()
-        return Group.objects.get(pk=player.group.pk)
-
     def post_connect(self, group_id, participant_code):
+        # Needs to be defined
         group_name = self.get_group().get_channel_group_name()
         async_to_sync(self.channel_layer.group_add)(
             group_name,  # room_group_name
@@ -144,10 +128,10 @@ class AuctionTracker(GeneralTracker):
         self.send(text_data=json.dumps(event['grp_msg']))
 
     def personal_message(self, event):
+        # Handles the personal.message" type when it's sent.
         self.send(text_data=json.dumps(event['reply']))
 
-    # CHANGE TO post receive json
-    def post_receive_json(self, text, group_id, participant_code):
+    def post_receive_json(self, text, **kwargs):
         player = self.get_player()
         if text.get('offer_made') and player.role() == 'employer':
             wage_offer = text['wage_offer']

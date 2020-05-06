@@ -14,31 +14,23 @@ logger = logging.getLogger(__name__)
 ALWAYS_UNRESTRICTED = 'ALWAYS_UNRESTRICTED'
 UNRESTRICTED_IN_DEMO_MODE = 'UNRESTRICTED_IN_DEMO_MODE'
 
-print("consumers started")
-
 
 class Minimum(_OTreeJsonWebsocketConsumer):
-    # this is the path that should correspond to the one we use in our javascript file
-    # the 'player_id' keyword helps us to retrieve the corresponding player data from the database
-    # url_pattern = r'^/minimum/(?P<player_id>[0-9]+)$'
-    print("TaskTracker started")
-    # ADDED
     unrestricted_when = ALWAYS_UNRESTRICTED
 
-    # ADDED
+    # General variables for example for identification cleaned
     def clean_kwargs(self, params):
         player_id = params
-        print("all kwargs", player_id)
         return {
             'player_id': int(player_id),
         }
 
-    # ADDED
+    # Channel group name defined
     def group_name(self, player_id):
         print("group name ", player_id)
         return "minimum_player-" + str(player_id)
 
-    # ADDED
+    # Handles the minimum.message sent through other files (for example models.py) - not used in this app?
     def minimum_message(self, event):
         print("minimum message", event)
         # Send message to WebSocket
@@ -46,7 +38,7 @@ class Minimum(_OTreeJsonWebsocketConsumer):
 
     # ADDED
     def post_connect(self, player_id):
-        # add them to the channel_layer
+        # add a new channel layer
         print("post connect")
         self.room_group_name = self.group_name(player_id)
         async_to_sync(self.channel_layer.group_add)(
@@ -63,12 +55,7 @@ class Minimum(_OTreeJsonWebsocketConsumer):
             self.channel_name
         )
 
-    # the following 'receive' method is executed automatically by Channels when a message is received from a client
-    #def receive(self, text=None, bytes=None, **kwargs):
-    # changed to post_receive_json
-
-    def post_receive_json(self, text, player_id):
-        print("post_receive_json activated")
+    def post_receive_json(self, text, player_id, **kwargs):
         # using the keyword we get the player
         p = Player.objects.get(id=player_id)
         # we receive the answer
@@ -86,14 +73,12 @@ class Minimum(_OTreeJsonWebsocketConsumer):
             # IMPORTANT: save the changes in the database
             p.save()
             # and send a new task with updated counters back to a user
-
             reply = {
                 'type': 'minimum_message',
                 'task_body': p.task_body,
                 'num_tasks_correct': p.num_tasks_correct,
                 'num_tasks_total': p.num_tasks_total,
             }
-
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 reply
