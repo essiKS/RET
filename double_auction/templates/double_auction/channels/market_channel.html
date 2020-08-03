@@ -37,6 +37,7 @@
             $('input#price').focus();
             var has_over_message = obj.hasOwnProperty('presence');
             if (has_over_message) {
+                console.log("has over message " + obj.presence.market_over);
                 if (obj.presence.market_over === true) {
                     $market_over_modal.find('.modal-message').html(obj.presence.over_message);
                     $market_over_modal.modal({backdrop: 'static', keyboard: false}, 'show');
@@ -76,13 +77,12 @@
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify(msg));
                 }
-                ;
                 $price_inp.val('').focus();
             }
         });
         $form_container.on('keydown', 'input#price', function () {
 
-            var $btn_answer = $('button#submit_statement');
+            let $btn_answer = $('button#submit_statement');
             if (event.keyCode === 13) {
 
                 event.preventDefault();
@@ -98,7 +98,6 @@
             if (socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify(msg));
             }
-            ;
         });
      });
 </script>

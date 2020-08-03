@@ -175,28 +175,29 @@ class MarketTracker(GeneralTracker):
                 }
             )
         group_msg = {
-            'spread': spread
+            'spread': spread,
+            'presence': group.presence_check()
         }
 
-        for p in group.get_players():
-            async_to_sync(self.channel_layer.group_send)(
-                group.get_channel_group_name(),
-                {
-                    "type": "auction.message",
-                    "group_msp": group_msg
-                })
+        async_to_sync(self.channel_layer.group_send)(
+            group.get_channel_group_name(),
+            {
+                "type": "auction.message",
+                "grp_msg": group_msg
+            })
 
         reply = {}
         last_statement = player.get_last_statement()
+
         if last_statement:
             reply['last_statement'] = last_statement.as_dict()
         reply['form'] = player.get_form_html()
 
-        for p in group.get_players():
-            async_to_sync(self.channel_layer.group_send)(
-                p.get_personal_channel_name(),
-                {
-                    "type": "personal.message",
-                    "reply": reply
-                })
+        p = self.get_player()
+        async_to_sync(self.channel_layer.group_send)(
+            p.get_personal_channel_name(),
+            {
+                "type": "personal.message",
+                "reply": reply
+            })
 

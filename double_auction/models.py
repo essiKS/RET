@@ -124,18 +124,21 @@ class Group(BaseGroup):
             return bests.last()
 
     def presence_check(self):
+        print("market presence check")
         group_msg = {'market_over': False}
         if self.no_buyers_left():
             self.active = False
             self.save()
             group_msg = {'market_over': True,
                    'over_message': 'No buyers left'}
+            print("mess no buyers left")
 
         if self.no_sellers_left():
             self.active = False
             self.save()
             group_msg = {'market_over': True,
                    'over_message': 'No sellers left'}
+            print("mess no sellers left")
         return group_msg
 
 
@@ -445,19 +448,6 @@ class Contract(djmodels.Model):
             p.set_payoff()
             p.active = p.is_active()
             p.save()
-            # E: replacing the following communications:
-            #p_group = ChannelGroup(p.get_personal_channel_name())
-            #p_group.send(
-            #    {'text': json.dumps({
-            #        'repo': p.get_repo_html(),
-            #        'contracts': p.get_contracts_html(),
-            #        'form': p.get_form_html(),
-            #        'profit': p.profit_block_html(),
-            #        'presence': p.presence_check(),
-            #    })}
-            #)
-            # with the following
-            p_group = p.get_personal_channel_name()
             reply = {
                     'repo': p.get_repo_html(),
                     'contracts': p.get_contracts_html(),
@@ -465,40 +455,35 @@ class Contract(djmodels.Model):
                     'profit': p.profit_block_html(),
                     'presence': p.presence_check(),
             }
-            async_to_sync(channel_layer.group_send)(p_group,  # this channel name needs to refer to the individual
-                {
+            async_to_sync(channel_layer.group_send)(p.get_personal_channel_name(), {
                     'type': "personal.message",
                     'reply': reply
                 })
 
         group = buyer.group
-        # E: replacing the following line of code:
-        #group_channel = ChannelGroup(group.get_channel_group_name())
-        #group_channel.send({'text': json.dumps({'presence': group.presence_check()})})
-        #for p in group.get_players():
-        #    group_channel = ChannelGroup(p.get_personal_channel_name())
-        #    group_channel.send({'text': json.dumps({'asks': p.get_asks_html(),
-        #                                            'bids': p.get_bids_html()})})
-        # with:
+        print("group", group)
         group_channel = group.get_channel_group_name()
-        group_msg = {
-            'presence': group.presence_check()
-        }
-        async_to_sync(channel_layer.group_send)(group_channel,
+        print("channel name gor group", group_channel)
+        group_msg = {'presence': group.presence_check()}
+        print("group_msg first stage", group_msg)
+        # can I tell if message is sent?
+        async_to_sync(channel_layer.group_send)(str(group_channel),
                                                 {
                                                     'type': "auction.message",
-                                                    'group_msg': group_msg
+                                                    'grp_msg': group_msg
                                                 })
+        print("message supposedly sent")
         for p in group.get_players():
             p_channel = p.get_personal_channel_name()
             reply = {
                 'asks': p.get_asks_html(),
-                'bids': p.get_bids_html()
+                'bids': p.get_bids_html(),
+                'presence': group.presence_check()
             }
             async_to_sync(channel_layer.group_send)(p_channel,
                                                     {
                                                         'type': "personal.message",
-                                                        'reply': reply
+                                                        'reply': reply,
                                                     })
         return contract
 
