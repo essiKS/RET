@@ -29,6 +29,7 @@
                 $('form').submit();
                 return;
             }
+            console.log("container " + obj.open_offers);
             $offer_container.html(obj.open_offers);
             $general_info_container.html(obj.general_info);
             $('div.offer_container').html(obj.open_offers);

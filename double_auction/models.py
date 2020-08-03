@@ -124,21 +124,18 @@ class Group(BaseGroup):
             return bests.last()
 
     def presence_check(self):
-        print("market presence check")
         group_msg = {'market_over': False}
         if self.no_buyers_left():
             self.active = False
             self.save()
             group_msg = {'market_over': True,
                    'over_message': 'No buyers left'}
-            print("mess no buyers left")
 
         if self.no_sellers_left():
             self.active = False
             self.save()
             group_msg = {'market_over': True,
                    'over_message': 'No sellers left'}
-            print("mess no sellers left")
         return group_msg
 
 
@@ -461,30 +458,25 @@ class Contract(djmodels.Model):
                 })
 
         group = buyer.group
-        print("group", group)
+        print("working")
         group_channel = group.get_channel_group_name()
-        print("channel name gor group", group_channel)
         group_msg = {'presence': group.presence_check()}
-        print("group_msg first stage", group_msg)
-        # can I tell if message is sent?
         async_to_sync(channel_layer.group_send)(str(group_channel),
                                                 {
                                                     'type': "auction.message",
                                                     'grp_msg': group_msg
                                                 })
-        print("message supposedly sent")
+        print("must work?")
         for p in group.get_players():
             p_channel = p.get_personal_channel_name()
             reply = {
                 'asks': p.get_asks_html(),
                 'bids': p.get_bids_html(),
-                'presence': group.presence_check()
             }
-            async_to_sync(channel_layer.group_send)(p_channel,
-                                                    {
-                                                        'type': "personal.message",
-                                                        'reply': reply,
-                                                    })
+            async_to_sync(channel_layer.group_send)(p_channel, {'type': "personal.message",
+                                                                'reply': reply,
+                                                                })
+            print("does this even work?")
         return contract
 
 

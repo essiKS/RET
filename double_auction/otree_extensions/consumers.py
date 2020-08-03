@@ -125,9 +125,9 @@ class MarketTracker(GeneralTracker):
         self.send(text_data=json.dumps(event['reply']))
 
     def post_connect(self, participant_code, page_index):
-        self.room_group_name = self.group_name(participant_code, page_index)
+        group_name = self.get_group().get_channel_group_name()
         async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name,
+            group_name,  # room_group_name
             self.channel_name
         )
 
@@ -176,7 +176,6 @@ class MarketTracker(GeneralTracker):
             )
         group_msg = {
             'spread': spread,
-            'presence': group.presence_check()
         }
 
         async_to_sync(self.channel_layer.group_send)(

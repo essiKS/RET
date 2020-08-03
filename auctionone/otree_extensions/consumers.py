@@ -151,8 +151,6 @@ class AuctionTracker(GeneralTracker):
         participant = Participant.objects.get(code__exact=participant_code)
         cur_page_index = participant._index_in_pages
         lookup = ParticipantToPlayerLookup.objects.get(participant=participant, page_index=cur_page_index)
-        self.player_pk = lookup.player_pk
-        print("at kwargs group id", group_id, "code", participant_code)
         return {
             'group_id': group_id,
             'participant_code': participant_code,
@@ -169,7 +167,6 @@ class AuctionTracker(GeneralTracker):
         return Group.objects.get(pk=player.group.pk)
 
     def connection_groups(self, **kwargs):
-        #Needs to be defined - but there is probably some over lap with post_connect?
         group_name = self.get_group().get_channel_group_name()
         async_to_sync(self.channel_layer.group_add)(group_name, self.channel_name)
         personal_channel = self.get_player().get_personal_channel_name()
