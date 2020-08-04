@@ -458,7 +458,6 @@ class Contract(djmodels.Model):
                 })
 
         group = buyer.group
-        print("working")
         group_channel = group.get_channel_group_name()
         group_msg = {'presence': group.presence_check()}
         async_to_sync(channel_layer.group_send)(str(group_channel),
@@ -466,7 +465,6 @@ class Contract(djmodels.Model):
                                                     'type': "auction.message",
                                                     'grp_msg': group_msg
                                                 })
-        print("must work?")
         for p in group.get_players():
             p_channel = p.get_personal_channel_name()
             reply = {
@@ -476,7 +474,6 @@ class Contract(djmodels.Model):
             async_to_sync(channel_layer.group_send)(p_channel, {'type': "personal.message",
                                                                 'reply': reply,
                                                                 })
-            print("does this even work?")
         return contract
 
 

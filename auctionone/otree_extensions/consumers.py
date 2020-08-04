@@ -62,8 +62,7 @@ class GeneralTracker(JsonWebsocketConsumer):
             # consider also self.accept() then send error message then self.close(code=1008)
             # this only affects otree core websockets.
         else:
-            # need to accept no matter what, so we can at least send
-            # an error message
+            # need to accept no matter what, so we can at least send an error message
             self.accept()
             self.post_connect(**self.cleaned_kwargs)
 
@@ -115,7 +114,6 @@ class TaskTracker(GeneralTracker):
     def get_player(self):
         return Player.objects.get(id=self.player_pk)
 
-    # CHANGE TO post receive json
     def post_receive_json(self, text, **kwargs):
         player = self.get_player()
         answer = text.get('answer')
@@ -151,6 +149,7 @@ class AuctionTracker(GeneralTracker):
         participant = Participant.objects.get(code__exact=participant_code)
         cur_page_index = participant._index_in_pages
         lookup = ParticipantToPlayerLookup.objects.get(participant=participant, page_index=cur_page_index)
+        self.player_pk = lookup.player_pk
         return {
             'group_id': group_id,
             'participant_code': participant_code,
@@ -174,12 +173,9 @@ class AuctionTracker(GeneralTracker):
         return [group_name, personal_channel]
 
     def post_connect(self, group_id, participant_code):
-        # Needs to be defined
+        # Needs to be defined - not sure what it does.
         group_name = self.get_group().get_channel_group_name()
-        async_to_sync(self.channel_layer.group_add)(
-            group_name,  # room_group_name
-            self.channel_name
-        )
+        async_to_sync(self.channel_layer.group_add)(group_name, self.channel_name)
 
     def auction_message(self, event):
         # Handles the "auction.message" type when it's sent.
